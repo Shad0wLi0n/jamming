@@ -3,14 +3,15 @@ import './App.css';
 import SearchBar from '../SearchBar/SearchBar';
 import SearchResults from '../SearchResults/SearchResults';
 import Playlist from '../Playlist/Playlist';
+import Spotify from '../../util/Spotify';
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      searchResults: [{id: 1, name: 'tiny dancer', artist: 'Elton John', album: 'Madman Across the Water', uri: 'some address'}],
+      searchResults: [],
       playlistName: "Scott's Awesome Playlist",
-      playlistTracks: [{id: 2, name: 'tiny pooper', artist: 'Elton Jane', album: 'Mad Women Across the Water', uri: 'some other address'}]
+      playlistTracks: []
     };
     this.addTrack = this.addTrack.bind(this);
     this.removeTrack = this.removeTrack.bind(this);
@@ -43,7 +44,10 @@ class App extends Component {
   }
 
   search(searchTerm) {
-    console.log(searchTerm);
+    Spotify.search(searchTerm).then(results => {
+      this.setState({searchResults: results})
+    });
+
   }
 
   render() {
