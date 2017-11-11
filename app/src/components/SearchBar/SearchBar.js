@@ -10,8 +10,14 @@ class SearchBar extends React.Component {
 	}
 
 	search(event) {
-		this.props.onSearch(this.state.searchTerm);
-		event.preventDefault();
+		if (this.state.searchTerm.length > 0) {
+			this.props.onSearch(this.state.searchTerm);
+			event.preventDefault();
+		}
+		else {
+			alert('You must enter a search term.');
+			event.preventDefault();
+		}
 	}
 
 	handleTermChange(event) {

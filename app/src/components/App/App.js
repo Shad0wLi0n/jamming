@@ -40,7 +40,10 @@ class App extends Component {
 
   savePlaylist() {
     let trackURIs = this.state.playlistTracks.map(track => track.uri);
-    console.log(trackURIs);
+    if(this.state.playlistName.length > 0 && this.state.playlistTracks.length > 0){
+      Spotify.savePlaylist(this.state.playlistName, trackURIs);
+    } 
+    else {alert('You must first create a playlist to add it to your Spotify account.');}
   }
 
   search(searchTerm) {
