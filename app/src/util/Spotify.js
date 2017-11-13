@@ -1,21 +1,30 @@
 const Spotify = {
-	accessToken: window.location.href.match(/access_token=([^&]*)/) || null,
-	expiration: window.location.href.match(/expires_in=([^&]*)/) || null,
 	getAccessToken() {
 		const clientID = "16ac34b5c2354d1b9fed37f39f9661c1";
 		const redirectURI = "http://localhost:3000/";
-		if (this.accessToken) {//access token is already set, return it
-			window.setTimeout(() => this.accessToken = '', this.expiration * 1000); window.history.replaceState({}, document.title, "/");
-			console.log(`getAccessToken logged as: ${this.accessToken}`);
-			return this.accessToken;
+		const accessToken = localStorage.getItem('accessToken');
+		const expiration = localStorage.getItem('expiration');
+		if ( accessToken ) {//access token is already set, return it
+			window.setTimeout(() => {
+				localStorage.removeItem('accessToken');
+				localStorage.removeItem('expiration');
+			}, expiration * 1000); 
+			console.log(`accessToken already set, logged as: ${accessToken}`);
+			return accessToken;
 		}
 		else {//access token is not set
-			this.accessToken = window.location.href.match(/access_token=([^&]*)/);
-			this.expiration = window.location.href.match(/expires_in=([^&]*)/);
-			window.setTimeout(() => this.accessToken = '', this.expiration * 1000); window.history.replaceState({}, document.title, "/");
-			if (this.accessToken && this.expiration) {//check if the URL was updated with the access token
-				console.log(`getAccessToken logged as: ${this.accessToken}`);
-				return this.accessToken;
+			let accessTokenValue = window.location.href.match(/access_token=([^&]*)/);
+			let expirationValue = window.location.href.match(/expires_in=([^&]*)/);
+			if (accessTokenValue && expirationValue) {//check if the URL was updated with the access token
+				localStorage.setItem('accessToken', accessTokenValue[1]);
+				localStorage.setItem('expiration', expirationValue[1]);
+				window.setTimeout(() => {
+					localStorage.removeItem('accessToken');
+					localStorage.removeItem('expiration');
+				}, expirationValue[1] * 1000); 
+				window.history.replaceState({}, document.title, "/");
+				console.log(`accessToken was set, logged as: ${accessTokenValue[1]}`);
+				return accessTokenValue[1];
 			}
 			else {
 				window.location.href = `https://accounts.spotify.com/authorize?client_id=${clientID}&response_type=token&scope=playlist-modify-public&redirect_uri=${redirectURI}`;
@@ -28,7 +37,7 @@ const Spotify = {
 		let url = `https://api.spotify.com/v1/search?type=track&q=${searchTerm}`;
 		if (accessToken) {
 			return fetch(url, { 
-				headers: {'Authorization': `Bearer ${accessToken[1]}`} 
+				headers: {'Authorization': `Bearer ${accessToken}`} 
 			})
 			.then(response => {
 			  if(response.ok) {
@@ -63,15 +72,16 @@ const Spotify = {
 	},
 
 	savePlaylist( playlistName, arrayOfTrackURIs) {
+		debugger;
 		let userAccessToken = this.getAccessToken();
 		if(playlistName && arrayOfTrackURIs) {
-			let authorizationHeader = null;
 			let userID = '';
 			if (userAccessToken) {
-				authorizationHeader = {
-					'Authorization': `Bearer ${userAccessToken[1]}`
-				}
-				return fetch('https://api.spotify.com/v1/me', {headers: authorizationHeader})
+				fetch('https://api.spotify.com/v1/me', {
+					headers: {
+						'Authorization': `Bearer ${userAccessToken}`
+					}
+				})
 				.then(response => {
 					if (response.ok) {
 						return response.json();
@@ -82,11 +92,13 @@ const Spotify = {
 				})
 				.then(jsonResponse => {
 					userID = jsonResponse.id;
-					return fetch(`https://api.spotify.com/v1/users/${userID}/playlists`, {
+					fetch(`https://api.spotify.com/v1/users/${userID}/playlists`, {
 						method: 'POST',
-						'Content-Type': 'application/json',
-						'Authorization': `Bearer ${userAccessToken[1]}`,
-						body: {name: playlistName}
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${userAccessToken}`
+						},
+						body: JSON.stringify({name: playlistName})
 					})
 					.then(response => {
 						if (response.ok) {
