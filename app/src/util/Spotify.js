@@ -9,7 +9,6 @@ const Spotify = {
 				localStorage.removeItem('accessToken');
 				localStorage.removeItem('expiration');
 			}, expiration * 1000); 
-			console.log(`accessToken already set, logged as: ${accessToken}`);
 			return accessToken;
 		}
 		else {//access token is not set
@@ -23,7 +22,6 @@ const Spotify = {
 					localStorage.removeItem('expiration');
 				}, expirationValue[1] * 1000); 
 				window.history.replaceState({}, document.title, "/");
-				console.log(`accessToken was set, logged as: ${accessTokenValue[1]}`);
 				return accessTokenValue[1];
 			}
 			else {
@@ -61,18 +59,15 @@ const Spotify = {
 			});
 		}
 		else {
-			Promise.reject(new Error('Access token not found, fetching access token')).then(error => {
+			return Promise.reject(new Error('Access token not found, fetching access token')).then(error => {
 			  // not called
 			}, error => {
 			  console.log(error); // Stacktrace
 			});
-			console.log('Your access token is bad');
-			alert('Your access token is missing or expired, I will attempt to fetch a fresh one. You may be prompted to login to your spotify account.');
 		}
 	},
 
 	savePlaylist( playlistName, arrayOfTrackURIs) {
-		debugger;
 		let userAccessToken = this.getAccessToken();
 		if(playlistName && arrayOfTrackURIs) {
 			let userID = '';
@@ -108,7 +103,20 @@ const Spotify = {
 					})
 					.then(jsonResponse => {
 						let playlistID = jsonResponse.id;
-						console.log(`playlistID: ${playlistID}`);
+						fetch(`https://api.spotify.com/v1/users/${userID}/playlists/${playlistID}/tracks`, {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json',
+								'Authorization': `Bearer ${userAccessToken}`
+							},
+							body: JSON.stringify({uris:arrayOfTrackURIs})
+						})
+						.then(response => {
+							if (response.ok) {
+								return response.json();
+							}
+							throw new Error('Playlist was created but the track insertion request failed!');
+						})
 					})
 				})
 			}
